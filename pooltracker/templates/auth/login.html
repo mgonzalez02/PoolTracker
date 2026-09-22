@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Log In · PoolTracker{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <h1>PoolTracker</h1>
+  <p class="subtitle">Log in to view your pool's chemical levels.</p>
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="field">
+      {{ form.username.label }}
+      {{ form.username(autofocus=true, autocomplete="username") }}
+      {% for error in form.username.errors %}<p class="error">{{ error }}</p>{% endfor %}
+    </div>
+    <div class="field">
+      {{ form.password.label }}
+      {{ form.password(autocomplete="current-password") }}
+      {% for error in form.password.errors %}<p class="error">{{ error }}</p>{% endfor %}
+    </div>
+    <div class="field field-checkbox">
+      {{ form.remember_me() }} {{ form.remember_me.label }}
+    </div>
+    {{ form.submit(class="btn btn-primary btn-block") }}
+  </form>
+</div>
+{% endblock %}

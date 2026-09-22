@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Enter Chemical Levels · PoolTracker{% endblock %}
+{% block content %}
+<div class="form-card">
+  <h1>Enter Chemical Levels</h1>
+  <p class="subtitle">Readings are saved with the current timestamp. Leave any field blank if you didn't test it.</p>
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="field-grid">
+      {% for attr, label, unit in reading_fields %}
+      {% set field = form[attr] %}
+      <div class="field">
+        {{ field.label }}
+        {{ field(step="any", min="0", inputmode="decimal") }}
+        {% for error in field.errors %}<p class="error">{{ error }}</p>{% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    {{ form.submit(class="btn btn-primary") }}
+    <a class="btn btn-link" href="{{ url_for('main.dashboard') }}">Cancel</a>
+  </form>
+</div>
+{% endblock %}

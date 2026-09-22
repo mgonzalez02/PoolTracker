@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · PoolTracker{% endblock %}
+{% block content %}
+<div class="dashboard-header">
+  <div>
+    <h1>Pool Dashboard</h1>
+    <p class="subtitle">
+      Trends over the last {{ trend_window_days }} days.
+      {% if last_addition %}
+        Chemicals last added {{ last_addition.timestamp.strftime('%b %d, %Y %I:%M %p') }} UTC.
+      {% else %}
+        No chemical additions logged yet.
+      {% endif %}
+    </p>
+  </div>
+  <div class="actions">
+    <a class="btn btn-primary" href="{{ url_for('main.new_reading') }}">+ Enter Chemical Levels</a>
+    <a class="btn btn-secondary" href="{{ url_for('main.new_chemical_addition') }}">+ Log Chemicals Added</a>
+  </div>
+</div>
+
+{% if not last_reading %}
+<p class="empty-state">No readings yet. Use "Enter Chemical Levels" to record your first test.</p>
+{% endif %}
+
+<div class="chart-grid">
+  {% for attr, label, unit in reading_fields %}
+  <div class="chart-card">
+    <h2>{{ label }}{% if unit %} <span class="unit">({{ unit }})</span>{% endif %}</h2>
+    <canvas data-field="{{ attr }}" height="200"></canvas>
+  </div>
+  {% endfor %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}
