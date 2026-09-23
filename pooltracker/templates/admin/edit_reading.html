@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Enter Chemical Levels · PoolTracker{% endblock %}
+{% block title %}Edit Reading · PoolTracker{% endblock %}
 {% block content %}
 <div class="form-card">
-  <h1>Enter Chemical Levels</h1>
-  <p class="subtitle">Leave any field blank if you didn't test it.</p>
+  <h1>Edit Reading</h1>
+  <p class="subtitle">Leave any field blank if it wasn't tested.</p>
   <form method="post" novalidate>
     {{ form.hidden_tag() }}
     <div class="field">
@@ -23,7 +23,7 @@
       {% endfor %}
     </div>
     {{ form.submit(class="btn btn-primary") }}
-    <a class="btn btn-link" href="{{ url_for('main.dashboard') }}">Cancel</a>
+    <a class="btn btn-link" href="{{ url_for('admin.entries') }}">Cancel</a>
   </form>
 </div>
 {% endblock %}

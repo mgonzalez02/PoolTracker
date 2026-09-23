@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}New User · PoolTracker{% endblock %}
+{% block content %}
+<div class="form-card">
+  <h1>New User</h1>
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="field">
+      {{ form.username.label }}
+      {{ form.username(autofocus=true, autocomplete="username") }}
+      {% for error in form.username.errors %}<p class="error">{{ error }}</p>{% endfor %}
+    </div>
+    <div class="field">
+      {{ form.email.label }}
+      {{ form.email(autocomplete="email", inputmode="email") }}
+      {% for error in form.email.errors %}<p class="error">{{ error }}</p>{% endfor %}
+    </div>
+    <div class="field">
+      {{ form.password.label }}
+      {{ form.password(autocomplete="new-password") }}
+      {% for error in form.password.errors %}<p class="error">{{ error }}</p>{% endfor %}
+    </div>
+    <div class="field">
+      {{ form.confirm_password.label }}
+      {{ form.confirm_password(autocomplete="new-password") }}
+      {% for error in form.confirm_password.errors %}<p class="error">{{ error }}</p>{% endfor %}
+    </div>
+    <div class="field field-checkbox">
+      {{ form.is_admin() }} {{ form.is_admin.label }}
+    </div>
+    {{ form.submit(class="btn btn-primary") }}
+    <a class="btn btn-link" href="{{ url_for('admin.users') }}">Cancel</a>
+  </form>
+</div>
+{% endblock %}

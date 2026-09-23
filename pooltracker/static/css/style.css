@@ -93,6 +93,13 @@ a { color: var(--blue); }
   color: #6b5900;
 }
 
+.view-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
 .chart-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -170,6 +177,51 @@ a { color: var(--blue); }
 .btn-secondary { background: #eef4f7; color: var(--blue-dark); border: 1px solid var(--border); }
 .btn-secondary:hover { background: #e0ecf1; }
 .btn-link { background: none; color: var(--text-muted); padding: 0.6rem 0.5rem; }
+.btn-danger { background: #fdecea; color: var(--error); border: 1px solid #f3c9c2; }
+.btn-danger:hover { background: #fadbd6; }
+.btn-sm { padding: 0.35rem 0.7rem; font-size: 0.85rem; }
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+}
+
+table.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.data-table th, .data-table td {
+  padding: 0.65rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.data-table th { color: var(--text-muted); font-weight: 600; font-size: 0.8rem; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table .row-actions { display: flex; gap: 0.4rem; }
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #e8f2f7;
+  color: var(--blue-dark);
+}
 
 @media (max-width: 640px) {
   .nav-toggle-label { display: block; }
@@ -196,10 +248,14 @@ a { color: var(--blue); }
   }
 
   .dashboard-header .actions,
+  .page-header .actions,
   .actions .btn {
     width: 100%;
   }
-  .dashboard-header .actions { flex-direction: column; }
+  .dashboard-header .actions,
+  .page-header .actions { flex-direction: column; }
+
+  .view-toggle-btn { flex: 1 1 auto; }
 
   .field-grid { grid-template-columns: 1fr; }
 }

@@ -15,6 +15,12 @@ def utcnow():
     return datetime.now(timezone.utc)
 
 
+def timestamp_for_date(date_value):
+    """Combine a date with the current time-of-day, so entries logged for a
+    specific day (today or backdated) still sort sensibly against each other."""
+    return datetime.combine(date_value, utcnow().time(), tzinfo=timezone.utc)
+
+
 # Chemical readings tracked on the dashboard: (model attribute, display label, unit).
 READING_FIELDS = [
     ("free_chlorine", "Free Chlorine", "ppm"),
@@ -42,6 +48,7 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
     email = db.Column(db.String(255), unique=True, nullable=True, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
+    is_admin = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
 
     def set_password(self, password):

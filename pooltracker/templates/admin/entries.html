@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Manage Entries · PoolTracker{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Manage Entries</h1>
+    <p class="subtitle">Most recent 50 of each. Edit or delete a mistaken entry.</p>
+  </div>
+</div>
+
+<h2 class="section-heading">Chemical Readings</h2>
+{% if not readings %}
+<p class="empty-state">No readings logged yet.</p>
+{% else %}
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        {% for attr, label, unit in reading_fields %}
+        <th>{{ label }}{% if unit %} ({{ unit }}){% endif %}</th>
+        {% endfor %}
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for reading in readings %}
+      <tr>
+        <td>{{ reading.timestamp.strftime('%b %d, %Y') }}</td>
+        {% for attr, label, unit in reading_fields %}
+        {% set value = reading | attr(attr) %}
+        <td>{{ value if value is not none else "—" }}</td>
+        {% endfor %}
+        <td>
+          <div class="row-actions">
+            <a class="btn btn-secondary btn-sm" href="{{ url_for('admin.edit_reading', reading_id=reading.id) }}">Edit</a>
+            <form method="post" action="{{ url_for('admin.delete_reading', reading_id=reading.id) }}"
+                  onsubmit="return confirm('Delete this reading? This cannot be undone.');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<h2 class="section-heading">Chemical Additions</h2>
+{% if not additions %}
+<p class="empty-state">No chemical additions logged yet.</p>
+{% else %}
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Items</th>
+        <th>Notes</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for addition in additions %}
+      <tr>
+        <td>{{ addition.timestamp.strftime('%b %d, %Y') }}</td>
+        <td>
+          {% set items = addition.items_added() %}
+          {% if items %}
+            {%- for label, amount, unit in items %}{{ label }}: {{ amount }}{{ unit }}{% if not loop.last %}, {% endif %}{% endfor -%}
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td>{{ addition.notes or "—" }}</td>
+        <td>
+          <div class="row-actions">
+            <a class="btn btn-secondary btn-sm" href="{{ url_for('admin.edit_chemical_addition', addition_id=addition.id) }}">Edit</a>
+            <form method="post" action="{{ url_for('admin.delete_chemical_addition', addition_id=addition.id) }}"
+                  onsubmit="return confirm('Delete this chemical addition? This cannot be undone.');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+{% endblock %}

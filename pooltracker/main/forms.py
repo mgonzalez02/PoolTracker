@@ -8,6 +8,7 @@ from pooltracker.models import ADDITION_FIELDS, READING_FIELDS
 
 
 class ReadingForm(FlaskForm):
+    date_added = DateField("Date", validators=[DataRequired()], default=date.today)
     submit = SubmitField("Save Reading")
 
 

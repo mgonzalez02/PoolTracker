@@ -4,7 +4,7 @@ from flask import current_app, flash, redirect, render_template, request, url_fo
 from flask_login import current_user, login_required, login_user, logout_user
 
 from pooltracker.auth import auth_bp
-from pooltracker.auth.forms import LoginForm, RequestResetForm, ResetPasswordForm
+from pooltracker.auth.forms import LoginForm, RequestResetForm, ResetPasswordForm, SetupForm
 from pooltracker.email_utils import mail_is_configured, send_password_reset_email
 from pooltracker.extensions import db
 from pooltracker.models import User
@@ -25,10 +25,43 @@ def _build_reset_url(token):
     return url_for("auth.reset_password", token=token, _external=True)
 
 
+@auth_bp.route("/setup", methods=["GET", "POST"])
+def setup():
+    if current_user.is_authenticated:
+        return redirect(url_for("main.dashboard"))
+
+    # Only usable to create the very first account. Once any user exists,
+    # further accounts go through admin-managed creation instead.
+    if User.query.count() > 0:
+        return redirect(url_for("auth.login"))
+
+    form = SetupForm()
+    if form.validate_on_submit():
+        username = form.username.data.strip()
+        email = form.email.data.strip() if form.email.data else None
+        if User.query.filter_by(username=username).first():
+            flash("That username is already taken.", "error")
+            return render_template("auth/setup.html", form=form)
+
+        user = User(username=username, email=email, is_admin=True)
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+
+        login_user(user)
+        flash("Admin account created. Welcome to PoolTracker!", "success")
+        return redirect(url_for("main.dashboard"))
+
+    return render_template("auth/setup.html", form=form)
+
+
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for("main.dashboard"))
+
+    if User.query.count() == 0:
+        return redirect(url_for("auth.setup"))
 
     form = LoginForm()
     if form.validate_on_submit():

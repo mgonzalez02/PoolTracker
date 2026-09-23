@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Manage Users · PoolTracker{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Manage Users</h1>
+    <p class="subtitle">Accounts that can log in to PoolTracker.</p>
+  </div>
+  <div class="actions">
+    <a class="btn btn-primary" href="{{ url_for('admin.new_user') }}">+ New User</a>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Created</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in users %}
+      <tr>
+        <td>{{ user.username }}{% if user.id == current_user.id %} <span class="subtitle">(you)</span>{% endif %}</td>
+        <td>{{ user.email or "—" }}</td>
+        <td>{% if user.is_admin %}<span class="badge">Admin</span>{% else %}User{% endif %}</td>
+        <td>{{ user.created_at.strftime('%b %d, %Y') }}</td>
+        <td>
+          <div class="row-actions">
+            <form method="post" action="{{ url_for('admin.delete_user', user_id=user.id) }}"
+                  onsubmit="return confirm('Delete user \'{{ user.username }}\'? This cannot be undone.');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

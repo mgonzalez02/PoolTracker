@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Edit Chemical Addition · PoolTracker{% endblock %}
+{% block content %}
+<div class="form-card">
+  <h1>Edit Chemical Addition</h1>
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="field">
+      {{ form.date_added.label }}
+      {{ form.date_added() }}
+      {% for error in form.date_added.errors %}<p class="error">{{ error }}</p>{% endfor %}
+    </div>
+
+    <div class="field-grid">
+      {% for attr, label, unit in addition_fields %}
+      {% set field = form[attr] %}
+      <div class="field">
+        {{ field.label }}
+        {{ field(step="any", min="0", inputmode="decimal") }}
+        {% for error in field.errors %}<p class="error">{{ error }}</p>{% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <h2 class="section-heading">Other</h2>
+    <div class="field-grid">
+      <div class="field">
+        {{ form.other_name.label }}
+        {{ form.other_name(placeholder="e.g. Algaecide") }}
+        {% for error in form.other_name.errors %}<p class="error">{{ error }}</p>{% endfor %}
+      </div>
+      <div class="field">
+        {{ form.other_amount.label }}
+        {{ form.other_amount(step="any", min="0", inputmode="decimal") }}
+        {% for error in form.other_amount.errors %}<p class="error">{{ error }}</p>{% endfor %}
+      </div>
+    </div>
+
+    <div class="field">
+      {{ form.notes.label }}
+      {{ form.notes(rows="3") }}
+      {% for error in form.notes.errors %}<p class="error">{{ error }}</p>{% endfor %}
+    </div>
+
+    {{ form.submit(class="btn btn-primary") }}
+    <a class="btn btn-link" href="{{ url_for('admin.entries') }}">Cancel</a>
+  </form>
+</div>
+{% endblock %}

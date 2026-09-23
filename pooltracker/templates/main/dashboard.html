@@ -4,7 +4,7 @@
 <div class="dashboard-header">
   <div>
     <h1>Pool Dashboard</h1>
-    <p class="subtitle">
+    <p class="subtitle" id="view-subtitle">
       Trends over the last {{ trend_window_days }} days.
       {% if last_addition %}
         Chemicals last added {{ last_addition.timestamp.strftime('%b %d, %Y %I:%M %p') }} UTC.
@@ -22,6 +22,15 @@
 {% if not last_reading %}
 <p class="empty-state">No readings yet. Use "Enter Chemical Levels" to record your first test.</p>
 {% endif %}
+
+<div class="view-toggle" role="group" aria-label="Chart view">
+  <button type="button" class="btn btn-primary view-toggle-btn" data-view="30day">Last 30 Days</button>
+  <button type="button" class="btn btn-secondary view-toggle-btn" data-view="since_addition">Since Last Addition</button>
+</div>
+
+<p class="empty-state" id="since-addition-empty" hidden>
+  No chemical additions logged yet. Log one to see levels since your last dose.
+</p>
 
 <div class="chart-grid">
   {% for attr, label, unit in reading_fields %}

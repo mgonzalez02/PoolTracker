@@ -3,8 +3,9 @@ import os
 
 import click
 from email_validator import EmailNotValidError, validate_email
-from flask import Flask
+from flask import Flask, render_template
 from sqlalchemy import inspect, text
+from sqlalchemy.exc import OperationalError
 
 from pooltracker.extensions import csrf, db, login_manager
 
@@ -28,35 +29,70 @@ def create_app(config_object="config.Config"):
     def load_user(user_id):
         return db.session.get(User, int(user_id))
 
+    from pooltracker.admin import admin_bp
     from pooltracker.auth import auth_bp
     from pooltracker.main import main_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
+    app.register_blueprint(admin_bp)
+
+    @app.errorhandler(403)
+    def forbidden(_error):
+        return render_template("errors/403.html"), 403
 
     with app.app_context():
         db.create_all()
-        _ensure_user_email_column()
+        _ensure_user_columns()
 
     register_cli(app)
 
     return app
 
 
-def _ensure_user_email_column():
-    """Add the `email` column to an existing `user` table created before it existed.
+def _add_column_if_missing(existing_columns, column_name, alter_sql):
+    """Add a column via ALTER TABLE, tolerating a concurrent gunicorn worker
+    doing the exact same thing (each worker calls create_app() independently
+    at boot, so two workers can both see the column missing and race to add it)."""
+    if column_name in existing_columns:
+        return
+    try:
+        with db.engine.begin() as conn:
+            conn.execute(text(alter_sql))
+    except OperationalError as exc:
+        if "duplicate column name" not in str(exc).lower():
+            raise
 
-    db.create_all() only creates missing tables, so upgrading in place needs a
-    one-off ALTER TABLE rather than a full migration framework.
+
+def _ensure_user_columns():
+    """Add columns to an existing `user` table created before they existed.
+
+    db.create_all() only creates missing tables, so upgrading in place needs
+    one-off ALTER TABLEs rather than a full migration framework.
     """
     inspector = inspect(db.engine)
     if "user" not in inspector.get_table_names():
         return
     columns = {col["name"] for col in inspector.get_columns("user")}
-    if "email" in columns:
-        return
-    with db.engine.begin() as conn:
-        conn.execute(text("ALTER TABLE user ADD COLUMN email VARCHAR(255)"))
+
+    _add_column_if_missing(columns, "email", "ALTER TABLE user ADD COLUMN email VARCHAR(255)")
+    _add_column_if_missing(
+        columns, "is_admin", "ALTER TABLE user ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT 0"
+    )
+
+    # If nobody is an admin yet but there's exactly one account, it's clearly
+    # the site's owner, so grandfather it in rather than silently locking
+    # them out of admin features (the /setup page only helps when zero users
+    # exist). Safe to run on every boot: it's a no-op once any admin exists,
+    # and from multiple concurrent workers it just performs the same
+    # harmless write twice.
+    from pooltracker.models import User
+
+    if User.query.filter_by(is_admin=True).count() == 0:
+        users = User.query.all()
+        if len(users) == 1:
+            users[0].is_admin = True
+            db.session.commit()
 
 
 def _read_new_password():
@@ -171,3 +207,23 @@ def register_cli(app):
         user.set_password(password)
         db.session.commit()
         click.echo(f"Password for '{username}' updated.")
+
+    @app.cli.command("promote-admin")
+    @click.argument("username")
+    def promote_admin(username):
+        """Grant an existing login admin access (user management, editing entries)."""
+        from pooltracker.models import User
+
+        username = username.strip()
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            click.echo(f"User '{username}' not found.")
+            return
+
+        if user.is_admin:
+            click.echo(f"'{username}' is already an admin.")
+            return
+
+        user.is_admin = True
+        db.session.commit()
+        click.echo(f"'{username}' is now an admin.")

@@ -21,8 +21,8 @@ class Config:
     # Set to True when serving over HTTPS in production.
     SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() == "true"
 
-    # Rolling window (in days) used for the trend charts on the dashboard.
-    TREND_WINDOW_DAYS = 7
+    # Rolling window (in days) used for the "Last 30 Days" dashboard view.
+    TREND_WINDOW_DAYS = 30
 
     # Public hostname used to build links in emails (e.g. password resets),
     # e.g. "https://pool.example.com" or "http://192.168.1.50:8080". Without
