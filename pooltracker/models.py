@@ -1,9 +1,14 @@
 from datetime import datetime, timezone
 
+from flask import current_app
 from flask_login import UserMixin
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from pooltracker.extensions import db
+
+PASSWORD_RESET_SALT = "password-reset"
+PASSWORD_RESET_MAX_AGE = 3600  # 1 hour
 
 
 def utcnow():
@@ -35,6 +40,7 @@ ADDITION_FIELDS = [
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False, index=True)
+    email = db.Column(db.String(255), unique=True, nullable=True, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     created_at = db.Column(db.DateTime(timezone=True), default=utcnow, nullable=False)
 
@@ -43,6 +49,27 @@ class User(UserMixin, db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def get_reset_token(self):
+        serializer = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
+        # Binding the token to a fragment of the current password hash makes
+        # it single-use: once the password is changed, old tokens naturally
+        # stop matching, with no extra "used" state to store or clean up.
+        return serializer.dumps([self.id, self.password_hash[-12:]], salt=PASSWORD_RESET_SALT)
+
+    @staticmethod
+    def verify_reset_token(token):
+        serializer = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
+        try:
+            user_id, hash_fragment = serializer.loads(
+                token, salt=PASSWORD_RESET_SALT, max_age=PASSWORD_RESET_MAX_AGE
+            )
+        except (BadSignature, SignatureExpired, ValueError):
+            return None
+        user = db.session.get(User, user_id)
+        if user is None or user.password_hash[-12:] != hash_fragment:
+            return None
+        return user
 
     def __repr__(self):
         return f"<User {self.username}>"

@@ -1,10 +1,12 @@
 from urllib.parse import urlparse
 
-from flask import flash, redirect, render_template, request, url_for
+from flask import current_app, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 
 from pooltracker.auth import auth_bp
-from pooltracker.auth.forms import LoginForm
+from pooltracker.auth.forms import LoginForm, RequestResetForm, ResetPasswordForm
+from pooltracker.email_utils import mail_is_configured, send_password_reset_email
+from pooltracker.extensions import db
 from pooltracker.models import User
 
 
@@ -14,6 +16,13 @@ def _is_safe_next_url(target):
     ref_url = urlparse(request.host_url)
     test_url = urlparse(target)
     return test_url.scheme in ("", "http", "https") and ref_url.netloc == test_url.netloc
+
+
+def _build_reset_url(token):
+    base_url = current_app.config.get("APP_BASE_URL")
+    if base_url:
+        return base_url + url_for("auth.reset_password", token=token)
+    return url_for("auth.reset_password", token=token, _external=True)
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
@@ -43,3 +52,53 @@ def logout():
     logout_user()
     flash("You have been logged out.", "info")
     return redirect(url_for("auth.login"))
+
+
+@auth_bp.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if current_user.is_authenticated:
+        return redirect(url_for("main.dashboard"))
+
+    if not mail_is_configured():
+        flash(
+            "Password reset emails aren't set up for this site. Ask an admin to reset your password.",
+            "info",
+        )
+        return redirect(url_for("auth.login"))
+
+    form = RequestResetForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data.strip()).first()
+        if user:
+            reset_url = _build_reset_url(user.get_reset_token())
+            try:
+                send_password_reset_email(user, reset_url)
+            except OSError:
+                current_app.logger.exception("Failed to send password reset email")
+
+        # Always show the same message, whether or not that email is on file,
+        # so this form can't be used to discover which emails have accounts.
+        flash("If that email is on file, a password reset link has been sent.", "info")
+        return redirect(url_for("auth.login"))
+
+    return render_template("auth/forgot_password.html", form=form)
+
+
+@auth_bp.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    if current_user.is_authenticated:
+        return redirect(url_for("main.dashboard"))
+
+    user = User.verify_reset_token(token)
+    if not user:
+        flash("That password reset link is invalid or has expired.", "error")
+        return redirect(url_for("auth.forgot_password"))
+
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        user.set_password(form.password.data)
+        db.session.commit()
+        flash("Your password has been reset. You can now log in.", "success")
+        return redirect(url_for("auth.login"))
+
+    return render_template("auth/reset_password.html", form=form)

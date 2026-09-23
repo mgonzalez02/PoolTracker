@@ -42,12 +42,23 @@ a { color: var(--blue); }
 
 .topbar nav a {
   margin-left: 1rem;
+  padding: 0.5rem 0.25rem;
   text-decoration: none;
   color: var(--text);
   font-size: 0.9rem;
 }
 
 .topbar nav a:hover { color: var(--blue); }
+
+.nav-toggle-label {
+  display: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.nav-toggle-label:hover { background: var(--bg); }
 
 .container {
   max-width: 1100px;
@@ -122,6 +133,7 @@ a { color: var(--blue); }
 .field input[type="text"],
 .field input[type="password"],
 .field input[type="number"],
+.field input[type="date"],
 .field textarea {
   padding: 0.55rem 0.65rem;
   border: 1px solid var(--border);
@@ -158,3 +170,36 @@ a { color: var(--blue); }
 .btn-secondary { background: #eef4f7; color: var(--blue-dark); border: 1px solid var(--border); }
 .btn-secondary:hover { background: #e0ecf1; }
 .btn-link { background: none; color: var(--text-muted); padding: 0.6rem 0.5rem; }
+
+@media (max-width: 640px) {
+  .nav-toggle-label { display: block; }
+
+  .topbar nav {
+    display: none;
+    flex-basis: 100%;
+    flex-direction: column;
+    gap: 0;
+  }
+  .nav-toggle:checked ~ nav { display: flex; }
+
+  .topbar nav a {
+    margin-left: 0;
+    padding: 0.85rem 0.25rem;
+    border-top: 1px solid var(--border);
+    font-size: 1rem;
+  }
+
+  .auth-card, .form-card {
+    padding: 1.25rem;
+    margin: 1rem auto;
+    border-radius: 8px;
+  }
+
+  .dashboard-header .actions,
+  .actions .btn {
+    width: 100%;
+  }
+  .dashboard-header .actions { flex-direction: column; }
+
+  .field-grid { grid-template-columns: 1fr; }
+}

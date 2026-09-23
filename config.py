@@ -23,3 +23,21 @@ class Config:
 
     # Rolling window (in days) used for the trend charts on the dashboard.
     TREND_WINDOW_DAYS = 7
+
+    # Public hostname used to build links in emails (e.g. password resets),
+    # e.g. "https://pool.example.com" or "http://192.168.1.50:8080". Without
+    # this, links are built from the request's Host header, which is wrong
+    # behind a proxy or when the app is reached at a different address than
+    # the one the request came in on (e.g. 127.0.0.1 during local testing).
+    # No trailing slash.
+    APP_BASE_URL = os.environ.get("APP_BASE_URL", "").rstrip("/") or None
+
+    # SMTP settings used to send "forgot password" emails. Leave MAIL_SERVER
+    # unset to disable emailing (the "Forgot password?" link will tell users
+    # to contact an admin instead).
+    MAIL_SERVER = os.environ.get("MAIL_SERVER")
+    MAIL_PORT = int(os.environ.get("MAIL_PORT", 587))
+    MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS", "true").lower() == "true"
+    MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
+    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
+    MAIL_DEFAULT_SENDER = os.environ.get("MAIL_DEFAULT_SENDER", MAIL_USERNAME)

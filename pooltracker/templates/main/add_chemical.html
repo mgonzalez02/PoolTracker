@@ -3,9 +3,15 @@
 {% block content %}
 <div class="form-card">
   <h1>Log Chemicals Added</h1>
-  <p class="subtitle">Fill in an amount for each chemical you added to the pool today. Leave the rest blank.</p>
+  <p class="subtitle">Fill in an amount for each chemical you added. Leave the rest blank.</p>
   <form method="post" novalidate>
     {{ form.hidden_tag() }}
+    <div class="field">
+      {{ form.date_added.label }}
+      {{ form.date_added() }}
+      {% for error in form.date_added.errors %}<p class="error">{{ error }}</p>{% endfor %}
+    </div>
+
     <div class="field-grid">
       {% for attr, label, unit in addition_fields %}
       {% set field = form[attr] %}

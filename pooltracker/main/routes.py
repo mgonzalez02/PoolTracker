@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 from flask import current_app, flash, jsonify, redirect, render_template, url_for
 from flask_login import current_user, login_required
@@ -71,8 +71,12 @@ def new_reading():
 def new_chemical_addition():
     form = ChemicalAdditionForm()
     if form.validate_on_submit():
+        # Keep the current time-of-day so same-day entries still sort sensibly,
+        # and picking today's date behaves exactly like the old "always now" default.
+        timestamp = datetime.combine(form.date_added.data, utcnow().time(), tzinfo=timezone.utc)
         addition = ChemicalAddition(
             user_id=current_user.id,
+            timestamp=timestamp,
             other_name=form.other_name.data.strip() if form.other_name.data else None,
             other_amount=form.other_amount.data,
             notes=form.notes.data.strip() if form.notes.data else None,

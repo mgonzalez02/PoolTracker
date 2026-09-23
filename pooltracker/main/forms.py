@@ -1,6 +1,8 @@
+from datetime import date
+
 from flask_wtf import FlaskForm
-from wtforms import FloatField, StringField, SubmitField, TextAreaField
-from wtforms.validators import Length, NumberRange, Optional
+from wtforms import DateField, FloatField, StringField, SubmitField, TextAreaField
+from wtforms.validators import DataRequired, Length, NumberRange, Optional
 
 from pooltracker.models import ADDITION_FIELDS, READING_FIELDS
 
@@ -10,6 +12,7 @@ class ReadingForm(FlaskForm):
 
 
 class ChemicalAdditionForm(FlaskForm):
+    date_added = DateField("Date Added", validators=[DataRequired()], default=date.today)
     other_name = StringField("Other (name)", validators=[Optional(), Length(max=120)])
     other_amount = FloatField("Other (amount, oz)", validators=[Optional(), NumberRange(min=0)])
     notes = TextAreaField("Notes", validators=[Optional(), Length(max=500)])
