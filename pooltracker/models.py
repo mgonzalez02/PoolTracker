@@ -31,6 +31,7 @@ READING_FIELDS = [
     ("tds", "TDS", "ppm"),
     ("calcium_hardness", "Calcium Hardness", "ppm"),
     ("nacl", "NaCl (Salt)", "ppm"),
+    ("temperature", "Water Temperature", "°F"),
 ]
 
 # Chemicals that can be logged as "added to the pool": (model attribute, display label, unit).
@@ -39,7 +40,8 @@ ADDITION_FIELDS = [
     ("muriatic_acid_oz", "Muriatic Acid", "oz"),
     ("cya_oz", "CYA", "oz"),
     ("bromine_oz", "Bromine", "oz"),
-    ("soda_ash_oz", "Soda Ash", "oz"),
+    ("sodium_bicarbonate_oz", "Sodium Bicarbonate", "oz"),
+    ("calcium_chloride_oz", "Calcium Chloride", "oz"),
 ]
 
 
@@ -95,6 +97,7 @@ class Reading(db.Model):
     tds = db.Column(db.Float, nullable=True)
     calcium_hardness = db.Column(db.Float, nullable=True)
     nacl = db.Column(db.Float, nullable=True)
+    temperature = db.Column(db.Float, nullable=True)
 
     user = db.relationship("User", backref=db.backref("readings", lazy="dynamic"))
 
@@ -114,7 +117,8 @@ class ChemicalAddition(db.Model):
     muriatic_acid_oz = db.Column(db.Float, nullable=True)
     cya_oz = db.Column(db.Float, nullable=True)
     bromine_oz = db.Column(db.Float, nullable=True)
-    soda_ash_oz = db.Column(db.Float, nullable=True)
+    sodium_bicarbonate_oz = db.Column(db.Float, nullable=True)
+    calcium_chloride_oz = db.Column(db.Float, nullable=True)
     other_name = db.Column(db.String(120), nullable=True)
     other_amount = db.Column(db.Float, nullable=True)
     notes = db.Column(db.String(500), nullable=True)

@@ -44,6 +44,8 @@ def create_app(config_object="config.Config"):
     with app.app_context():
         db.create_all()
         _ensure_user_columns()
+        _ensure_chemical_addition_columns()
+        _ensure_reading_columns()
 
     register_cli(app)
 
@@ -62,6 +64,50 @@ def _add_column_if_missing(existing_columns, column_name, alter_sql):
     except OperationalError as exc:
         if "duplicate column name" not in str(exc).lower():
             raise
+
+
+def _rename_column_if_needed(existing_columns, old_name, new_name, table):
+    """Rename a column, tolerating a concurrent gunicorn worker doing the same
+    rename (see _add_column_if_missing for why workers can race at boot)."""
+    if old_name not in existing_columns or new_name in existing_columns:
+        return
+    try:
+        with db.engine.begin() as conn:
+            conn.execute(text(f"ALTER TABLE {table} RENAME COLUMN {old_name} TO {new_name}"))
+    except OperationalError:
+        # A sibling worker may have already renamed it; only re-raise if it didn't.
+        current_columns = {col["name"] for col in inspect(db.engine).get_columns(table)}
+        if new_name not in current_columns:
+            raise
+
+
+def _ensure_chemical_addition_columns():
+    """Upgrade an existing `chemical_addition` table created before Sodium
+    Bicarbonate replaced Soda Ash and Calcium Chloride was added.
+    """
+    inspector = inspect(db.engine)
+    if "chemical_addition" not in inspector.get_table_names():
+        return
+    columns = {col["name"] for col in inspector.get_columns("chemical_addition")}
+
+    _rename_column_if_needed(columns, "soda_ash_oz", "sodium_bicarbonate_oz", "chemical_addition")
+
+    columns = {col["name"] for col in inspect(db.engine).get_columns("chemical_addition")}
+    _add_column_if_missing(
+        columns,
+        "calcium_chloride_oz",
+        "ALTER TABLE chemical_addition ADD COLUMN calcium_chloride_oz FLOAT",
+    )
+
+
+def _ensure_reading_columns():
+    """Add the `temperature` column to an existing `reading` table created
+    before it existed."""
+    inspector = inspect(db.engine)
+    if "reading" not in inspector.get_table_names():
+        return
+    columns = {col["name"] for col in inspector.get_columns("reading")}
+    _add_column_if_missing(columns, "temperature", "ALTER TABLE reading ADD COLUMN temperature FLOAT")
 
 
 def _ensure_user_columns():
