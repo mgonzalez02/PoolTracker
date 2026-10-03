@@ -47,7 +47,6 @@ def trends_api():
                 {"label": escape(addition.other_name), "amount": escape(str(addition.other_amount)), "unit": "oz"}
             )
         return {
-            "id": escape(str(addition.id)),
             "timestamp": escape(addition.timestamp.isoformat()),
             "items": items,
             "notes": escape(addition.notes) if addition.notes else None,
