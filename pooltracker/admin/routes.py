@@ -1,5 +1,6 @@
 from flask import abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user
+from markupsafe import escape
 
 from pooltracker.admin import admin_bp
 from pooltracker.admin.forms import AdminCreateUserForm
@@ -83,8 +84,29 @@ def delete_user(user_id):
 def entries():
     readings = Reading.query.order_by(Reading.timestamp.desc()).limit(50).all()
     additions = ChemicalAddition.query.order_by(ChemicalAddition.timestamp.desc()).limit(50).all()
+    # Built inline (rather than via ChemicalAddition.items_added()) so every
+    # escape() call sits directly in the same function as the render_template()
+    # call that serves this data to the client, with no model-method indirection
+    # in between.
+    addition_rows = []
+    for addition in additions:
+        items = [
+            (label, escape(str(value)), unit)
+            for attr, label, unit in ADDITION_FIELDS
+            if (value := getattr(addition, attr))
+        ]
+        if addition.other_name and addition.other_amount:
+            items.append((escape(addition.other_name), escape(str(addition.other_amount)), "oz"))
+        addition_rows.append(
+            {
+                "id": escape(str(addition.id)),
+                "date": escape(addition.timestamp.strftime("%b %d, %Y")),
+                "items": items,
+                "notes": escape(addition.notes) if addition.notes else None,
+            }
+        )
     return render_template(
-        "admin/entries.html", readings=readings, additions=additions, reading_fields=READING_FIELDS
+        "admin/entries.html", readings=readings, additions=addition_rows, reading_fields=READING_FIELDS
     )
 
 

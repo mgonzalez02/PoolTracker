@@ -124,22 +124,3 @@ class ChemicalAddition(db.Model):
     notes = db.Column(db.String(500), nullable=True)
 
     user = db.relationship("User", backref=db.backref("chemical_additions", lazy="dynamic"))
-
-    def items_added(self):
-        """List of (label, amount, unit) for every field that was actually filled in."""
-        items = []
-        for attr, label, unit in ADDITION_FIELDS:
-            value = getattr(self, attr)
-            if value:
-                items.append((label, value, unit))
-        if self.other_name and self.other_amount:
-            items.append((self.other_name, self.other_amount, "oz"))
-        return items
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "timestamp": self.timestamp.isoformat(),
-            "items": [{"label": label, "amount": amount, "unit": unit} for label, amount, unit in self.items_added()],
-            "notes": self.notes,
-        }
