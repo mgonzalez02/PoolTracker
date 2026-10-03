@@ -1,5 +1,6 @@
 from flask import abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user
+from markupsafe import escape
 
 from pooltracker.admin import admin_bp
 from pooltracker.admin.forms import AdminCreateUserForm
@@ -83,8 +84,19 @@ def delete_user(user_id):
 def entries():
     readings = Reading.query.order_by(Reading.timestamp.desc()).limit(50).all()
     additions = ChemicalAddition.query.order_by(ChemicalAddition.timestamp.desc()).limit(50).all()
+    # other_name/notes are free-text user input: escape them here, before the
+    # template renders, rather than relying only on Jinja's implicit autoescape.
+    addition_rows = [
+        {
+            "id": addition.id,
+            "timestamp": addition.timestamp,
+            "items": addition.items_added(),
+            "notes": escape(addition.notes) if addition.notes else None,
+        }
+        for addition in additions
+    ]
     return render_template(
-        "admin/entries.html", readings=readings, additions=additions, reading_fields=READING_FIELDS
+        "admin/entries.html", readings=readings, additions=addition_rows, reading_fields=READING_FIELDS
     )
 
 

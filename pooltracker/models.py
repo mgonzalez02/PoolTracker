@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from flask import current_app
 from flask_login import UserMixin
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
+from markupsafe import escape
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from pooltracker.extensions import db
@@ -126,14 +127,19 @@ class ChemicalAddition(db.Model):
     user = db.relationship("User", backref=db.backref("chemical_additions", lazy="dynamic"))
 
     def items_added(self):
-        """List of (label, amount, unit) for every field that was actually filled in."""
+        """List of (label, amount, unit) for every field that was actually filled in.
+
+        other_name is free-text user input, so it's HTML-escaped here, once, at
+        the point it leaves the model — every caller (JSON API, admin template)
+        gets an already-safe value instead of re-implementing escaping itself.
+        """
         items = []
         for attr, label, unit in ADDITION_FIELDS:
             value = getattr(self, attr)
             if value:
                 items.append((label, value, unit))
         if self.other_name and self.other_amount:
-            items.append((self.other_name, self.other_amount, "oz"))
+            items.append((escape(self.other_name), self.other_amount, "oz"))
         return items
 
     def to_dict(self):
@@ -141,5 +147,5 @@ class ChemicalAddition(db.Model):
             "id": self.id,
             "timestamp": self.timestamp.isoformat(),
             "items": [{"label": label, "amount": amount, "unit": unit} for label, amount, unit in self.items_added()],
-            "notes": self.notes,
+            "notes": escape(self.notes) if self.notes else None,
         }

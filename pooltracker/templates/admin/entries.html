@@ -67,9 +67,8 @@
       <tr>
         <td>{{ addition.timestamp.strftime('%b %d, %Y') }}</td>
         <td>
-          {% set items = addition.items_added() %}
-          {% if items %}
-            {%- for label, amount, unit in items %}{{ label }}: {{ amount }}{{ unit }}{% if not loop.last %}, {% endif %}{% endfor -%}
+          {% if addition['items'] %}
+            {%- for label, amount, unit in addition['items'] %}{{ label }}: {{ amount }}{{ unit }}{% if not loop.last %}, {% endif %}{% endfor -%}
           {% else %}
             —
           {% endif %}
