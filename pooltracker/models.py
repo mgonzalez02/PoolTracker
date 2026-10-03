@@ -130,8 +130,7 @@ class ChemicalAddition(db.Model):
         """List of (label, amount, unit) for every field that was actually filled in.
 
         other_name is free-text user input, so it's HTML-escaped here, once, at
-        the point it leaves the model — every caller (JSON API, admin template)
-        gets an already-safe value instead of re-implementing escaping itself.
+        the point it leaves the model, rather than relying on the caller to do it.
         """
         items = []
         for attr, label, unit in ADDITION_FIELDS:
@@ -141,11 +140,3 @@ class ChemicalAddition(db.Model):
         if self.other_name and self.other_amount:
             items.append((escape(self.other_name), self.other_amount, "oz"))
         return items
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "timestamp": self.timestamp.isoformat(),
-            "items": [{"label": label, "amount": amount, "unit": unit} for label, amount, unit in self.items_added()],
-            "notes": escape(self.notes) if self.notes else None,
-        }

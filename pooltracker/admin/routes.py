@@ -88,8 +88,8 @@ def entries():
     # template renders, rather than relying only on Jinja's implicit autoescape.
     addition_rows = [
         {
-            "id": addition.id,
-            "timestamp": addition.timestamp,
+            "id": escape(str(addition.id)),
+            "date": escape(addition.timestamp.strftime("%b %d, %Y")),
             "items": addition.items_added(),
             "notes": escape(addition.notes) if addition.notes else None,
         }

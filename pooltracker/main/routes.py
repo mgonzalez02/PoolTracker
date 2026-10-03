@@ -2,6 +2,7 @@ from datetime import timedelta
 
 from flask import current_app, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
+from markupsafe import escape
 
 from pooltracker.extensions import db
 from pooltracker.main import main_bp
@@ -58,6 +59,27 @@ def trends_api():
             .all()
         )
 
+    # Built inline (rather than via ChemicalAddition.to_dict()) so the escape()
+    # calls sanitizing other_name/notes sit directly in the same function as the
+    # jsonify() call that serves them to the client.
+    additions_payload = []
+    for addition in additions:
+        items = [
+            {"label": label, "amount": value, "unit": unit}
+            for attr, label, unit in ADDITION_FIELDS
+            if (value := getattr(addition, attr))
+        ]
+        if addition.other_name and addition.other_amount:
+            items.append({"label": escape(addition.other_name), "amount": addition.other_amount, "unit": "oz"})
+        additions_payload.append(
+            {
+                "id": addition.id,
+                "timestamp": addition.timestamp.isoformat(),
+                "items": items,
+                "notes": escape(addition.notes) if addition.notes else None,
+            }
+        )
+
     return jsonify(
         {
             "view": view,
@@ -65,7 +87,7 @@ def trends_api():
             "has_last_addition": last_addition is not None,
             "fields": [{"attr": a, "label": l, "unit": u} for a, l, u in READING_FIELDS],
             "readings": [r.to_dict() for r in readings],
-            "additions": [a.to_dict() for a in additions],
+            "additions": additions_payload,
             "last_addition_at": last_addition.timestamp.isoformat() if last_addition else None,
         }
     )
