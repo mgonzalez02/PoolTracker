@@ -32,40 +32,11 @@ def trends_api():
     if view not in ("30day", "since_addition"):
         view = "30day"
 
-    window_days = current_app.config["TREND_WINDOW_DAYS"]
-    last_addition = ChemicalAddition.query.order_by(ChemicalAddition.timestamp.desc()).first()
-
-    if view == "since_addition":
-        if last_addition is None:
-            readings = []
-            additions = []
-        else:
-            readings = (
-                Reading.query.filter(Reading.timestamp >= last_addition.timestamp)
-                .order_by(Reading.timestamp.asc())
-                .all()
-            )
-            # There's only one marker to show: by definition nothing has been
-            # added since the "last" addition itself.
-            additions = [last_addition]
-    else:
-        since = utcnow() - timedelta(days=window_days)
-        readings = (
-            Reading.query.filter(Reading.timestamp >= since).order_by(Reading.timestamp.asc()).all()
-        )
-        additions = (
-            ChemicalAddition.query.filter(ChemicalAddition.timestamp >= since)
-            .order_by(ChemicalAddition.timestamp.asc())
-            .all()
-        )
-
     # Built inline (rather than via ChemicalAddition.to_dict()) so every escape()
     # call sits directly in the same function as the jsonify() call that serves
-    # this data to the client, with no model-method indirection in between.
-    additions_payload = []
-    for addition in additions:
-        if addition is None:
-            continue
+    # this data to the client, with no model-method indirection in between. Takes
+    # a non-None ChemicalAddition only — called right where that's established.
+    def addition_payload(addition):
         items = [
             {"label": label, "amount": escape(str(value)), "unit": unit}
             for attr, label, unit in ADDITION_FIELDS
@@ -75,14 +46,40 @@ def trends_api():
             items.append(
                 {"label": escape(addition.other_name), "amount": escape(str(addition.other_amount)), "unit": "oz"}
             )
-        additions_payload.append(
-            {
-                "id": escape(str(addition.id)),
-                "timestamp": escape(addition.timestamp.isoformat()),
-                "items": items,
-                "notes": escape(addition.notes) if addition.notes else None,
-            }
+        return {
+            "id": escape(str(addition.id)),
+            "timestamp": escape(addition.timestamp.isoformat()),
+            "items": items,
+            "notes": escape(addition.notes) if addition.notes else None,
+        }
+
+    window_days = current_app.config["TREND_WINDOW_DAYS"]
+    last_addition = ChemicalAddition.query.order_by(ChemicalAddition.timestamp.desc()).first()
+
+    if view == "since_addition":
+        if last_addition is None:
+            readings = []
+            additions_payload = []
+        else:
+            readings = (
+                Reading.query.filter(Reading.timestamp >= last_addition.timestamp)
+                .order_by(Reading.timestamp.asc())
+                .all()
+            )
+            # There's only one marker to show: by definition nothing has been
+            # added since the "last" addition itself.
+            additions_payload = [addition_payload(last_addition)]
+    else:
+        since = utcnow() - timedelta(days=window_days)
+        readings = (
+            Reading.query.filter(Reading.timestamp >= since).order_by(Reading.timestamp.asc()).all()
         )
+        additions_payload = [
+            addition_payload(addition)
+            for addition in ChemicalAddition.query.filter(ChemicalAddition.timestamp >= since)
+            .order_by(ChemicalAddition.timestamp.asc())
+            .all()
+        ]
 
     return jsonify(
         {
