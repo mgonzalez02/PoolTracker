@@ -59,22 +59,24 @@ def trends_api():
             .all()
         )
 
-    # Built inline (rather than via ChemicalAddition.to_dict()) so the escape()
-    # calls sanitizing other_name/notes sit directly in the same function as the
-    # jsonify() call that serves them to the client.
+    # Built inline (rather than via ChemicalAddition.to_dict()) so every escape()
+    # call sits directly in the same function as the jsonify() call that serves
+    # this data to the client, with no model-method indirection in between.
     additions_payload = []
     for addition in additions:
         items = [
-            {"label": label, "amount": value, "unit": unit}
+            {"label": label, "amount": escape(str(value)), "unit": unit}
             for attr, label, unit in ADDITION_FIELDS
             if (value := getattr(addition, attr))
         ]
         if addition.other_name and addition.other_amount:
-            items.append({"label": escape(addition.other_name), "amount": addition.other_amount, "unit": "oz"})
+            items.append(
+                {"label": escape(addition.other_name), "amount": escape(str(addition.other_amount)), "unit": "oz"}
+            )
         additions_payload.append(
             {
-                "id": addition.id,
-                "timestamp": addition.timestamp.isoformat(),
+                "id": escape(str(addition.id)),
+                "timestamp": escape(addition.timestamp.isoformat()),
                 "items": items,
                 "notes": escape(addition.notes) if addition.notes else None,
             }
