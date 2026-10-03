@@ -1,8 +1,9 @@
-Flask==3.1.0
+Flask==3.1.3
 Flask-SQLAlchemy==3.1.1
 Flask-Login==0.6.3
 Flask-WTF==1.2.2
 WTForms==3.2.1
 MarkupSafe==3.0.3
-python-dotenv==1.0.1
+# Use the current 1.x line of python-dotenv and allow patched upstream releases.
+python-dotenv>=1.2.1,<2.0.0
 email-validator==2.2.0
