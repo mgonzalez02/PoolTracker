@@ -64,6 +64,8 @@ def trends_api():
     # this data to the client, with no model-method indirection in between.
     additions_payload = []
     for addition in additions:
+        if addition is None:
+            continue
         items = [
             {"label": label, "amount": escape(str(value)), "unit": unit}
             for attr, label, unit in ADDITION_FIELDS
